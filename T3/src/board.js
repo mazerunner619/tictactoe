@@ -223,7 +223,7 @@ export default function Board() {
   function enterTheGame() {
     if (nameA) {
       // socket = SocketClient('http://localhost:5000/');
-      socket = SocketClient("https://tictactoe-6avf.onrender.com/", {
+      socket = SocketClient("https://mazeyst3game.onrender.com/", {
         transports: ["websocket"],
       });
       socket.on("connect", () => {
