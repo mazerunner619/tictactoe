@@ -183,7 +183,7 @@ export default function Board() {
   });
 
   function refreshList() {
-    console.log("refresh requested");
+    // console.log("refresh requested");
     socket.emit("refresh-list", { socketId: socket.id, playerName: nameA });
   }
 

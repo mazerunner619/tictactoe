@@ -24,14 +24,14 @@ const inGame = {};
 
 app.set("socketio", io);
 io.on("connection", (socket) => {
-  console.log("new socket connected", socket.id);
+  // console.log("new socket connected", socket.id);
   socket.on("im-in", (obj) => {
     onlinePlayers[socket.id] = obj.playerName;
     playerStatus[socket.id] = false; // not in a battle
     io.to(socket.id).emit("getList", { onlinePlayers, playerStatus });
   });
   socket.on("refresh-list", (obj) => {
-    console.log("refresh requets from ", obj.playerName);
+    // console.log("refresh requets from ", obj.playerName);
     onlinePlayers[socket.id] = obj.playerName;
     io.to(obj.socketId).emit("refresh-list", { onlinePlayers, playerStatus });
   });
@@ -42,13 +42,14 @@ io.on("connection", (socket) => {
       playerName: onlinePlayers[obj.from],
     };
     if (playerStatus[obj.to] == false) {
-      console.log("request sent");
+      // console.log("request sent");
       io.to(obj.to).emit("receive-request", requestInfo);
-    } else console.log("already in a match");
+    }
+    // else console.log("already in a match");
   });
 
   socket.on("accept-request", (data) => {
-    console.log("accept request", data);
+    // console.log("accept request", data);
     playerStatus[data.from] = true;
     playerStatus[data.to] = true;
     inGame[data.from] = data.to;
@@ -67,8 +68,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("opponent-move", ({ playerId, index }) => {
-    console.log({ playerId, index });
-    console.log("Opponent", onlinePlayers[playerId], index);
+    // console.log({ playerId, index });
+    // console.log("Opponent", onlinePlayers[playerId], index);
     io.to(playerId).emit("opponent-move", index);
   });
 
@@ -95,7 +96,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log(socket.id, "disconnected");
+    // console.log(socket.id, "disconnected");
     delete onlinePlayers[socket.id];
     delete playerStatus[socket.id];
     socket.broadcast.emit("player-left", {
@@ -104,11 +105,11 @@ io.on("connection", (socket) => {
     });
     let ele = inGame[socket.id];
     if (ele) {
-      console.log(
-        onlinePlayers[socket.id],
-        " left during a match with ",
-        onlinePlayers[ele]
-      );
+      // console.log(
+      //   onlinePlayers[socket.id],
+      //   " left during a match with ",
+      //   onlinePlayers[ele]
+      // );
       playerStatus[ele] = false;
       delete inGame[socket.id];
       io.to(ele).emit("exit-game", {
@@ -119,11 +120,11 @@ io.on("connection", (socket) => {
       const keyArray = Object.keys(inGame);
       ele = keyArray.find((x) => inGame[x] === socket.id);
       if (ele) {
-        console.log(
-          onlinePlayers[socket.id],
-          " left during a match with ",
-          onlinePlayers[ele]
-        );
+        // console.log(
+        //   onlinePlayers[socket.id],
+        //   " left during a match with ",
+        //   onlinePlayers[ele]
+        // );
         playerStatus[ele] = false;
         delete inGame[ele];
         io.to(ele).emit("exit-game", {
