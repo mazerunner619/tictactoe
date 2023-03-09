@@ -48,6 +48,11 @@ io.on("connection", (socket) => {
     // else console.log("already in a match");
   });
 
+  socket.on("react-emoji", (obj) => {
+    console.log(obj);
+    io.to(obj.to).emit("receive-reaction", obj.message);
+  });
+
   socket.on("accept-request", (data) => {
     // console.log("accept request", data);
     playerStatus[data.from] = true;

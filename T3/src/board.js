@@ -10,6 +10,9 @@ import AlertMessage from "./Alerts";
 import { HiRefresh } from "react-icons/hi";
 import { FcRefresh } from "react-icons/fc";
 
+import Reaction from "./reactions.js";
+import ShowReaction from "./show_reaction";
+
 let socket;
 
 export default function Board() {
@@ -23,6 +26,9 @@ export default function Board() {
   const [D1, setD1] = useState(true);
   const [D2, setD2] = useState(false);
   const [D3, setD3] = useState(false);
+  const [toggle_animate_class, set_toggle_animate_class] =
+    useState("disappear");
+  const [reaction_emoji, set_reaction_emoji] = useState("");
   // to signify , if the player maked the 1st turn    => mark X
   const [one, setOne] = useState(false);
   const [result, setResult] = useState("the battle is on ...");
@@ -131,6 +137,16 @@ export default function Board() {
         setOpponent({ id: data.playerId, name: data.playerName });
         setPopup(true);
       });
+
+      socket.on("receive-reaction", (data) => {
+        set_reaction_emoji(data);
+        // alert(data);
+        set_toggle_animate_class("appear");
+        setTimeout(() => {
+          set_toggle_animate_class("disappear");
+        }, 1500);
+      });
+
       socket.on("player-left", (data) => {
         // let ind = onlinePlayers.findIndex(x=>x.playerId === data.playerId );
         setOnlinePlayers(
@@ -222,10 +238,10 @@ export default function Board() {
 
   function enterTheGame() {
     if (nameA) {
-      // socket = SocketClient('http://localhost:5000/');
-      socket = SocketClient("https://mazeyst3game.onrender.com/", {
-        transports: ["websocket"],
-      });
+      socket = SocketClient("http://localhost:5000/");
+      // socket = SocketClient("https://mazeyst3game.onrender.com/", {
+      //   transports: ["websocket"],
+      // });
       socket.on("connect", () => {
         socket.emit("im-in", { playerName: nameA });
       });
@@ -299,6 +315,11 @@ export default function Board() {
 
   return (
     <div>
+      <ShowReaction
+        currClass={toggle_animate_class}
+        reaction={reaction_emoji}
+      />
+
       <div className="landing" style={{ display: landing }}>
         <div>LET'S TIC-TAC-TOE</div>
       </div>
@@ -327,6 +348,13 @@ export default function Board() {
         </form>
 
         <div className="heading">Tic Tac Toe</div>
+        <div
+          className="reaction-bar"
+          style={{ display: D3 ? "block" : "none" }}
+        >
+          <Reaction socket_descriptor={socket} opponent={opponent} />
+        </div>
+
         <div
           className="onlinePlayers"
           style={{ display: D2 ? "block" : "none" }}
@@ -400,8 +428,9 @@ export default function Board() {
             </div>
           </div>
         </div>
+
         <div className="pointsT" style={{ display: D3 ? "block" : "none" }}>
-          <h2>{turn ? "Your turn" : `${opponent.name}'s Turn`}</h2>
+          <h2>({one ? avatar1 : avatar2}) {turn ? `Your turn ` : `${opponent.name}'s Turn`}</h2>
           <h3 style={{ color: "green" }}>
             {nameA} {playerA}
           </h3>
