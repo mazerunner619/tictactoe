@@ -238,10 +238,10 @@ export default function Board() {
 
   function enterTheGame() {
     if (nameA) {
-      socket = SocketClient("http://localhost:5000/");
-      // socket = SocketClient("https://mazeyst3game.onrender.com/", {
-      //   transports: ["websocket"],
-      // });
+      // socket = SocketClient("http://localhost:5000/");
+      socket = SocketClient("https://mazeyst3game.onrender.com/", {
+        transports: ["websocket"],
+      });
       socket.on("connect", () => {
         socket.emit("im-in", { playerName: nameA });
       });
@@ -430,7 +430,10 @@ export default function Board() {
         </div>
 
         <div className="pointsT" style={{ display: D3 ? "block" : "none" }}>
-          <h2>({one ? avatar1 : avatar2}) {turn ? `Your turn ` : `${opponent.name}'s Turn`}</h2>
+          <h2>
+            ({one ? avatar1 : avatar2}){" "}
+            {turn ? `Your turn ` : `${opponent.name}'s Turn`}
+          </h2>
           <h3 style={{ color: "green" }}>
             {nameA} {playerA}
           </h3>
