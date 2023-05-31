@@ -1,13 +1,10 @@
 import SocketClient from "socket.io-client";
 import React, { useState, useEffect } from "react";
-import { Row, Col, Container } from "react-bootstrap";
+import { Container } from "react-bootstrap";
 import { Button } from "@material-ui/core";
 import "./App.css";
 import RequestModal from "./requestModal";
-import { checkboxClasses } from "@mui/material";
-import { keys } from "@mui/system";
 import AlertMessage from "./Alerts";
-import { HiRefresh } from "react-icons/hi";
 import { FcRefresh } from "react-icons/fc";
 
 import Reaction from "./reactions.js";
@@ -42,6 +39,8 @@ export default function Board() {
 
   const avatar1 = "❌";
   const avatar2 = "⭕";
+  const computer = { id: -1, name: "🤖" };
+  const responseDelay = 1000;
 
   const [alertMessage, setAlertMessage] = useState({
     open: false,
@@ -71,7 +70,7 @@ export default function Board() {
   // let onlinePlayers = [];
 
   useEffect(() => {
-    setTimeout(() => setLanding("none"), 3000);
+    setTimeout(() => setLanding("none"), 0);
   }, []);
 
   useEffect(() => {
@@ -106,11 +105,19 @@ export default function Board() {
         }
       });
       socket.on("request-accepted", (data) => {
-        setAlertMessage({
-          open: true,
-          message: `${data.playerName} accepted your challenge`,
-          severity: "success",
-        });
+        if (data.playerId === computer.id) {
+          setAlertMessage({
+            open: true,
+            message: `You're playing against ${computer.name}. ALL THE BEST`,
+            severity: "information",
+          });
+        } else {
+          setAlertMessage({
+            open: true,
+            message: `${data.playerName} accepted your challenge`,
+            severity: "success",
+          });
+        }
         setOne(true);
         setTurn(true);
         setCount(0);
@@ -157,33 +164,53 @@ export default function Board() {
       //data here is index of the 9x9 box
       socket.on("opponent-move", (data) => {
         mark[data] = one ? avatar2 : avatar1;
-        setTurn(true);
+        setTimeout(() => {
+          setTurn(true);
+        }, responseDelay);
       });
 
-      socket.on("tie", () => {
+      socket.on("tie", (index) => {
         setAlertMessage({
           open: true,
           message: "impressive !.... a TIE",
           severity: "information",
         });
-        setTie((prev) => prev + 1);
-        setTurn(true);
-        setOne(true);
-        setCount(0);
-        setMark(new Array(9).fill(""));
+        mark[index] = one ? avatar2 : avatar1;
+        setTimeout(() => {
+          setTie((prev) => prev + 1);
+          setTurn(true);
+          setOne(true);
+          setCount(0);
+          setMark(new Array(9).fill(""));
+        }, responseDelay);
       });
 
-      socket.on("won", () => {
+      socket.on("won", (index) => {
         setAlertMessage({
           open: true,
           message: "you lost !",
           severity: "warning",
         });
-        setMark(new Array(9).fill(""));
-        setTurn(false);
-        setOne(false);
-        setplayerB((prev) => prev + 1);
-        setCount(0);
+
+        mark[index] = one ? avatar2 : avatar1;
+
+        setTimeout(() => {
+          setMark(new Array(9).fill(""));
+          setTurn(false);
+          setOne(false);
+          setplayerB((prev) => prev + 1);
+          setCount(0);
+
+          if (opponent.id === computer.id) {
+            socket.emit("opponent-move", {
+              playerId: opponent.id,
+              index: null,
+              from: socket.id,
+              board: mark,
+              avatar: avatar2,
+            });
+          }
+        }, responseDelay);
       });
 
       socket.on("exit-game", (data) => {
@@ -192,7 +219,10 @@ export default function Board() {
           message: `opponent left !`,
           severity: "error",
         });
-        reset();
+
+        setTimeout(() => {
+          reset();
+        }, responseDelay);
       });
       return () => socket.off();
     }
@@ -201,6 +231,11 @@ export default function Board() {
   function refreshList() {
     // console.log("refresh requested");
     socket.emit("refresh-list", { socketId: socket.id, playerName: nameA });
+  }
+
+  function playWithComputer() {
+    socket.emit("send-request", { from: socket.id, to: computer.id });
+    setOpponent({ id: computer.id, name: computer.name });
   }
 
   function exitGame(e) {
@@ -239,9 +274,11 @@ export default function Board() {
   function enterTheGame() {
     if (nameA) {
       // socket = SocketClient("http://localhost:5000/");
+
       socket = SocketClient("https://mazeyst3game.onrender.com/", {
         transports: ["websocket"],
       });
+
       socket.on("connect", () => {
         socket.emit("im-in", { playerName: nameA });
       });
@@ -251,7 +288,7 @@ export default function Board() {
     }
   }
 
-  function checkResult() {
+  function checkResult(boxNo) {
     const myChar = one ? avatar1 : avatar2;
     if (
       (mark[0] === myChar && mark[1] === myChar && mark[2] === myChar) ||
@@ -271,7 +308,11 @@ export default function Board() {
       setplayerA((prev) => prev + 1);
       setTurn(true);
       setOne(true);
-      socket.emit("won", { from: socket.id, to: opponent.id });
+      if (opponent.id !== computer.id)
+        socket.emit("won", { from: socket.id, to: opponent.id, index: boxNo });
+      else {
+        // handle win against computer
+      }
       setCount(0);
       setMark(new Array(9).fill(""));
       return true;
@@ -285,11 +326,11 @@ export default function Board() {
       if (one) {
         // setTurn(false);
         mark[boxNo] = avatar1;
-        if (checkResult()) return;
+        if (checkResult(boxNo)) return;
         setCount((prev) => prev + 1);
         if (count === 4) {
           setCount(0);
-          setOne(false);
+          if (opponent.id !== computer.id) setOne(false);
           // setTurn(false);
           setTie((prev) => prev + 1);
           setMark(new Array(9).fill(""));
@@ -298,17 +339,46 @@ export default function Board() {
             message: "impressive !.... a TIE",
             severity: "information",
           });
-          socket.emit("tie", { from: socket.id, to: opponent.id });
+          if (opponent.id !== computer.id)
+            socket.emit("tie", {
+              from: socket.id,
+              to: opponent.id,
+              index: boxNo,
+            });
+          else {
+            // handle tie with computer
+            setMark(new Array(9).fill(""));
+            socket.emit("opponent-move", {
+              playerId: opponent.id,
+              index: null,
+              from: socket.id,
+              board: mark,
+              avatar: avatar1,
+            });
+          }
           return;
         }
-        socket.emit("opponent-move", { playerId: opponent.id, index: boxNo });
+        socket.emit("opponent-move", {
+          playerId: opponent.id,
+          index: boxNo,
+          from: socket.id,
+          board: mark,
+          avatar: avatar2,
+        });
       } else {
         // setTurn(false);
         mark[boxNo] = avatar2;
-        if (checkResult()) {
+        if (checkResult(boxNo)) {
           return;
         }
-        socket.emit("opponent-move", { playerId: opponent.id, index: boxNo });
+        socket.emit("opponent-move", {
+          playerId: opponent.id,
+          index: boxNo,
+          from: socket.id,
+          board: mark,
+          avatar: avatar1,
+        });
+        // socket.emit("opponent-move", { playerId: opponent.id, index: boxNo });
       }
     }
   }
@@ -352,7 +422,11 @@ export default function Board() {
           className="reaction-bar"
           style={{ display: D3 ? "block" : "none" }}
         >
-          <Reaction socket_descriptor={socket} opponent={opponent} />
+          {opponent.id !== -1 ? (
+            <Reaction socket_descriptor={socket} opponent={opponent} />
+          ) : (
+            ""
+          )}
         </div>
 
         <div
@@ -394,6 +468,12 @@ export default function Board() {
             <FcRefresh />
             Refresh
           </div>
+
+          <div className="refresh-button" onClick={playWithComputer}>
+            <FcRefresh />
+            Play with 🤖
+          </div>
+
           {/* </div> */}
         </div>
 

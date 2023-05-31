@@ -5,6 +5,7 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const path = require("path");
+const { nextMove, winner, gameOver } = require("./aiPlayer");
 
 app.use(cors());
 
@@ -41,11 +42,20 @@ io.on("connection", (socket) => {
       playerId: obj.from,
       playerName: onlinePlayers[obj.from],
     };
-    if (playerStatus[obj.to] == false) {
-      // console.log("request sent");
+    // request to play against computer
+    if (obj.to === -1) {
+      console.log("request agains computer");
+      playerStatus[obj.from] = true;
+      io.to(obj.from).emit("request-accepted", {
+        playerId: obj.to,
+        playerName: "Computer",
+      });
+    } else if (playerStatus[obj.to] == false) {
+      // player is online and avalable to play
       io.to(obj.to).emit("receive-request", requestInfo);
+    } else {
+      console.log(`${obj.to} is busy`);
     }
-    // else console.log("already in a match");
   });
 
   socket.on("react-emoji", (obj) => {
@@ -72,32 +82,51 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("opponent-move", ({ playerId, index }) => {
-    // console.log({ playerId, index });
-    // console.log("Opponent", onlinePlayers[playerId], index);
-    io.to(playerId).emit("opponent-move", index);
+  socket.on("opponent-move", ({ playerId, index, from, board, avatar }) => {
+    if (playerId === -1) {
+      let aimove = undefined;
+      if (index === null) {
+        // regarding tie from user end
+        aimove = nextMove(board, avatar);
+        io.to(from).emit("opponent-move", aimove);
+      } else {
+        // make ai move
+        aimove = nextMove(board, avatar);
+        board[aimove] = avatar;
+        if (winner(board, avatar)) io.to(from).emit("won", aimove);
+        else if (gameOver(board)) io.to(from).emit("tie", aimove);
+        else io.to(from).emit("opponent-move", aimove);
+      }
+    } else {
+      io.to(playerId).emit("opponent-move", index);
+    }
   });
 
   // {from : request, to : socket.id});
 
   socket.on("exit-game", (data) => {
-    playerStatus[data.from] = false;
-    playerStatus[data.to] = false;
-    if (inGame[data.from]) delete inGame[data.from];
-    else if (inGame[data.to]) delete inGame[data.to];
-    io.to(data.to).emit("exit-game", {
-      playerId: data.from,
-      playerName: onlinePlayers[data.from],
-    });
+    if (data.to === -1) {
+      playerStatus[data.from] = false;
+      if (inGame[data.from]) delete inGame[data.from];
+    } else {
+      playerStatus[data.from] = false;
+      playerStatus[data.to] = false;
+      if (inGame[data.from]) delete inGame[data.from];
+      else if (inGame[data.to]) delete inGame[data.to];
+      io.to(data.to).emit("exit-game", {
+        playerId: data.from,
+        playerName: onlinePlayers[data.from],
+      });
+    }
     io.emit("refresh-list", { onlinePlayers, playerStatus });
   });
 
-  socket.on("tie", ({ from, to }) => {
-    io.to(to).emit("tie");
+  socket.on("tie", ({ from, to, index }) => {
+    io.to(to).emit("tie", index);
   });
 
-  socket.on("won", ({ from, to }) => {
-    io.to(to).emit("won");
+  socket.on("won", ({ from, to, index }) => {
+    io.to(to).emit("won", index);
   });
 
   socket.on("disconnect", () => {
