@@ -30,6 +30,8 @@ io.on("connection", (socket) => {
     onlinePlayers[socket.id] = obj.playerName;
     playerStatus[socket.id] = false; // not in a battle
     io.to(socket.id).emit("getList", { onlinePlayers, playerStatus });
+    io.emit("refresh-list", { onlinePlayers, playerStatus });
+
   });
   socket.on("refresh-list", (obj) => {
     // console.log("refresh requets from ", obj.playerName);
@@ -44,12 +46,12 @@ io.on("connection", (socket) => {
     };
     // request to play against computer
     if (obj.to === -1) {
-      console.log("request agains computer");
       playerStatus[obj.from] = true;
       io.to(obj.from).emit("request-accepted", {
         playerId: obj.to,
         playerName: "Computer",
       });
+      io.emit("refresh-list", { onlinePlayers, playerStatus });
     } else if (playerStatus[obj.to] == false) {
       // player is online and avalable to play
       io.to(obj.to).emit("receive-request", requestInfo);

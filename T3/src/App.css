@@ -290,7 +290,6 @@ body {
   color: greenyellow;
   text-align: center;
   margin: 10px auto;
-  /* font-size: 200%; */
   transition-duration: 0.3s;
   padding: 10px;
   background-color: black;
@@ -299,9 +298,24 @@ body {
   width: 50vw;
 }
 
+.vs-computer-button{
+  color: greenyellow;
+  text-align: center;
+  margin: 10px auto;
+  transition-duration: 0.2s;
+  padding: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid greenyellow;
+  width: 30vw;
+}
+
+.vs-computer-button:hover {
+  box-shadow: 1px 1px 1px 1px greenyellow;
+}
+
 .refresh-button:hover {
-  transform: scale(1.05);
-  box-shadow: 2px 2px 5px black;
+  box-shadow: 1px 1px 1px 1px white;
 }
 
 .myboard {

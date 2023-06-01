@@ -273,11 +273,12 @@ export default function Board() {
 
   function enterTheGame() {
     if (nameA) {
-      // socket = SocketClient("http://localhost:5000/");
-
-      socket = SocketClient("https://mazeyst3game.onrender.com/", {
-        transports: ["websocket"],
-      });
+      socket =
+        process.env.NODE_ENV == "production"
+          ? (socket = SocketClient("https://mazeyst3game.onrender.com/", {
+              transports: ["websocket"],
+            }))
+          : SocketClient("http://localhost:5000/");
 
       socket.on("connect", () => {
         socket.emit("im-in", { playerName: nameA });
@@ -464,14 +465,28 @@ export default function Board() {
             )}
           </Container>
 
-          <div className="refresh-button" onClick={refreshList}>
+          {/* <div className="refresh-button" onClick={refreshList}>
             <FcRefresh />
             Refresh
-          </div>
+          </div> */}
 
-          <div className="refresh-button" onClick={playWithComputer}>
-            <FcRefresh />
-            Play with 🤖
+          <div className="vs-computer-button" onClick={playWithComputer}>
+            <b style={{ color: "white", float: "left" }}>{nameA}</b> Vs{" "}
+            <b style={{ color: "white", float: "right" }}>🤖</b>
+          </div>
+          <div
+            style={{
+              width: "100%",
+              textAlign: "center",
+            }}
+          >
+            <i
+              style={{
+                color: "white",
+              }}
+            >
+              Nobody to play ? TRY ME👆
+            </i>
           </div>
 
           {/* </div> */}
