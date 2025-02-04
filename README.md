@@ -1,5 +1,4 @@
 # omni-trix created by custom css 😂
-![image](https://github.com/user-attachments/assets/40af0bae-7f71-49a5-888f-d7ae2ef456ba)
 
 <div id="flex-cont">
   <div id="handle"></div>
