@@ -1,3 +1,44 @@
+# omni-trix created by custom css 😂
+![image](https://github.com/user-attachments/assets/40af0bae-7f71-49a5-888f-d7ae2ef456ba)
+
+<div id="flex-cont">
+  <div id="handle"></div>
+  <div id="watch">
+    <hr id="tri" />
+  </div>
+  <div id="handle"></div>
+</div>
+
+#flex-cont {
+  display: flex column;
+  align-items: center;
+  justify-items: center;
+}
+
+#handle {
+  height: 300px;
+  width: 100px;
+  background-color: green;
+  border: 5px solid greenyellow;
+  box-shadow: 3px 3px 50px black;
+  margin: 2px;
+}
+
+#watch {
+  background-color: black;
+  padding: 10px;
+  border-radius: 9999px;
+  box-shadow: 3px 3px 50px black;
+}
+
+#tri {
+  border-bottom: 100px solid green;
+  border-top: 100px solid green;
+  border-left: 100px solid black;
+  border-right: 100px solid black;
+  border-radius: 9999px;
+}
+
 # tic-tac-toe-p2p
 checkout the deployed version here
 https://thet3game.herokuapp.com/
